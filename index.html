@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home & Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+    <div class="app-container" id="appContainer">
+        <div class="navbar">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('home')">🏠 Home</button>
+                <button class="tab" onclick="switchTab('expense')">💰 Expense Tracker</button>
+            </div>
+            <div class="nav-buttons">
+                <div class="theme-toggle" onclick="toggleTheme()"></div>
+                <button class="btn" onclick="showSettings()">⚙️ Settings</button>
+                <button class="btn" onclick="importBookmarks()">📥 Import Bookmarks</button>
+                <button class="btn" onclick="saveLocal()">💾 Save</button>
+                <button class="btn" onclick="loadLocal()">📂 Load</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="page active" id="homePage">
+                <div class="welcome">
+                    <h1>Welcome, <span id="userName">User</span>! 👋</h1>
+                    <p>Your personalized dashboard awaits</p>
+                </div>
+                <div class="bookmarks-grid" id="bookmarksGrid"></div>
+            </div>
+
+            <div class="page" id="expensePage">
+                <div class="expense-container">
+                    <div class="expense-header">
+                        <h1>💰 Expense Tracker</h1>
+                    </div>
+
+                    <div class="summary-cards">
+                        <div class="summary-card income">
+                            <h3>Total Income</h3>
+                            <p id="totalIncome">₹0</p>
+                        </div>
+                        <div class="summary-card expense">
+                            <h3>Total Expenses</h3>
+                            <p id="totalExpense">₹0</p>
+                        </div>
+                        <div class="summary-card balance">
+                            <h3>Net Balance</h3>
+                            <p id="totalBalance">₹0</p>
+                        </div>
+                        <div class="summary-card bank">
+                            <h3>Bank Balance</h3>
+                            <p id="bankBalance">₹0</p>
+                            <div class="bank-input-group">
+                                <input type="number" id="bankInput" placeholder="Set balance">
+                                <button onclick="updateBankBalance()">Update</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="expense-controls">
+                        <select id="monthFilter" onchange="filterExpenses()">
+                            <option value="">All Months</option>
+                        </select>
+                        <select id="yearFilter" onchange="filterExpenses()">
+                            <option value="">All Years</option>
+                        </select>
+                        <input type="text" id="searchFilter" placeholder="🔍 Search transactions..." oninput="filterExpenses()">
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="expense-table" id="expenseTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Amount (₹)</th>
+                                    <th>Running Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseBody"></tbody>
+                        </table>
+                    </div>
+                    <button class="add-row-btn" onclick="addExpenseRow()">+ Add Transaction</button>
+
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3>📊 Monthly Trend</h3>
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>🥧 Expense by Category</h3>
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>📈 Income vs Expense</h3>
+                            <canvas id="incomeExpenseChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>💵 Balance Trend</h3>
+                            <canvas id="balanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>⚙️ Settings</h2>
+            <label>Your Name:</label>
+            <input type="text" id="settingsName" placeholder="Enter your name">
+            <label>Wallpaper URL or Path:</label>
+            <input type="text" id="settingsWallpaper" placeholder="https://... or file path" oninput="previewWallpaper()">
+            <img id="wallpaperPreview" style="max-width: 200px; max-height: 150px; display: none; margin-top: 10px;">
+            <div class="modal-buttons">
+                <button class="btn" onclick="saveSettings()">Save Settings</button>
+                <button class="btn" onclick="closeModal('settingsModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="bookmarkModal">
+        <div class="modal-content">
+            <h2>🔖 Add Bookmark</h2>
+            <label>Name:</label>
+            <input type="text" id="bookmarkName" placeholder="Google">
+            <label>URL:</label>
+            <input type="text" id="bookmarkUrl" placeholder="https://google.com">
+            <div class="modal-buttons">
+                <button class="btn" onclick="saveBookmark()">Add Bookmark</button>
+                <button class="btn" onclick="closeModal('bookmarkModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/controller.js"></script>
+</body>
+</html>
