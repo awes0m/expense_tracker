@@ -1,80 +1,71 @@
-# Home & Expense Tracker
+# Expense Manager Pro
 
-A modern, browser-based personal finance dashboard and expense tracker built with vanilla JavaScript. Track your income and expenses, manage bookmarks, customize your dashboard, and visualize your financial data with interactive charts.
+A modern, single-page personal finance dashboard built with vanilla JavaScript. Manage day-to-day transactions, visualize cash flow trends, plan budgets, set savings goals, and tap into handy financial calculators4	7all directly in your browser.
 
 ## Features
 
-### 🏠 Home Dashboard
-- **Personalized Welcome**: Display your name and custom wallpaper
-- **Bookmark Management**: Add, edit, and organize your favorite websites
-- **Drag & Drop Bookmarks**: Reorder bookmarks with intuitive drag-and-drop
-- **Import Bookmarks**: Import bookmarks from browser-exported HTML files
+### Transactions Hub
+- **Inline editing**: Add, edit, and delete income or expense rows right inside the table.
+- **Type & category controls**: Toggle between `income` and `expense`, assign categories, and note payment methods.
+- **Smart filters**: Slice data by month, year, category, or a free-text search across descriptions.
+- **Auto summaries**: Track total income, expenses, and the net balance with live-updating summary cards.
 
-### 💰 Expense Tracking
-- **Transaction Management**: Add, edit, and delete income/expense entries
-- **Categories**: Organize expenses by custom categories
-- **Filters**: Filter by month, year, and search descriptions
-- **Bank Balance Integration**: Set and track your bank balance
-- **Running Balance Calculation**: See how each transaction affects your balance
+### Financial Analytics
+- **Monthly trend line chart**: Compare income vs. expense over time.
+- **Category breakdown doughnut**: Understand which categories eat the biggest portion of your budget.
+- **Income vs. expense bar chart**: Spot gaps between money in and money out.
+- **Balance trend chart**: Follow how your running balance evolves across transactions.
 
-### 📊 Financial Insights
-- **Summary Cards**: Quick overview of total income, expenses, net balance, and bank balance
-- **Interactive Charts**:
-  - Monthly income/expense trends
-  - Expense breakdown by category (pie chart)
-  - Income vs Expense comparison
-  - Balance trend over time
+### Financial Utilities
+- **Currency converter**: Quick conversions between INR, USD, EUR, GBP, JPY, AUD, and CAD (static sample rates for offline use).
+- **Loan calculator**: Estimate monthly EMIs with adjustable principal, interest, and tenure values.
+- **Investment calculator**: Project future value based on lump-sum, recurring contributions, expected return, and duration.
+- **Tax estimator**: Approximate Indian income tax liability across the old and new regimes.
 
-### ⚙️ Customization
-- **Themes**: Toggle between dark and light modes
-- **Settings**: Customize username and wallpaper
-- **Data Persistence**: Save/load your data as JSON files locally
+### Budget Oversight
+- **Category limits**: Define spending caps per category and see how much has been used.
+- **Progress indicators**: Visual gauges highlight safe, warning, and over-limit spending states.
+- **Dynamic syncing**: Budget spending updates automatically as you edit transactions.
+
+### Savings Goals
+- **Goal tracking**: Set targets, record current savings, and monitor completion percentages.
+- **Incremental updates**: Add contributions on the fly and visualize progress with animated bars.
+
+### Personalization & Safety Nets
+- **Theme toggle**: Switch instantly between polished dark and light themes.
+- **Unsaved change guardrails**: Visual save button cues plus leave-page prompts help prevent data loss.
+- **Sample data**: Preloaded examples let you explore the UI immediately (clear or overwrite as you go).
+- **Local data export/import**: Save your data as JSON files and reload them later without any server.
 
 ## Tech Stack
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript (ES6+)
-- **Charts**: Chart.js for data visualization
-- **Storage**: Local JSON file export/import (no server required)
-- **Icons**: Unicode emojis for lightweight UI
+- **Frontend**: HTML5, CSS3, vanilla JavaScript (ES6+)
+- **Charts**: [Chart.js](https://www.chartjs.org/) via CDN
+- **Storage**: Local JSON export/import, no backend required
 
-## Installation & Usage
+## Getting Started
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/awes0m/expense_tracker.git
-   cd expense_tracker
-   ```
-
-2. **Open in Browser**:
-   - Simply open `index.html` in your web browser
-   - No server or installation required - works entirely offline
-
-3. **Start Tracking**:
-   - Go to the "Expense Tracker" tab to add transactions
-   - Customize your dashboard in Settings
-   - Add bookmarks for quick access
+1. **Clone or download** this repository to your machine.
+2. **Open** `expense_tracker/index.html` directly in any modern browser.
+3. **Start tracking**: Enter transactions, explore analytics, configure budgets, and adjust goals.
 
 ## Data Management
 
-- **Save Data**: Export your data as a JSON file for backup
-- **Load Data**: Import previously saved JSON files
-- **Privacy**: All data stays local - no cloud storage or external APIs
+- **Export**: Use the `💾 Save` button to download your current data as a JSON backup.
+- **Import**: Click `📂 Load` to restore data from a previously saved JSON file.
+- **Privacy first**: All data lives in the browser; nothing is sent to external servers.
 
 ## Browser Compatibility
 
-Works in all modern browsers that support ES6 modules:
+Optimized for evergreen browsers that support ES6 features:
 - Chrome 61+
 - Firefox 60+
 - Safari 10.1+
 - Edge 16+
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Author
 
