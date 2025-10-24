@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "177037378990",
+    "project_id": "awesomexpensemanager",
+    "storage_bucket": "awesomexpensemanager.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:177037378990:android:48d63716918497cca0743f",
+        "android_client_info": {
+          "package_name": "awes0m.github.io.advance_expense_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmZ0IhC61uFNaV7BK1oI8c8flZ4Tipoo4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

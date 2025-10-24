@@ -1,0 +1,737 @@
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+
+void main() {
+  runApp(const ExpenseManagerApp());
+}
+
+class ExpenseManagerApp extends StatefulWidget {
+  const ExpenseManagerApp({Key? key}) : super(key: key);
+
+  @override
+  State<ExpenseManagerApp> createState() => _ExpenseManagerAppState();
+}
+
+class _ExpenseManagerAppState extends State<ExpenseManagerApp> {
+  ThemeMode _themeMode = ThemeMode.dark;
+
+  void toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Expense Manager Pro',
+      themeMode: _themeMode,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        cardColor: Colors.white,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        cardColor: const Color(0xFF1E293B),
+      ),
+      home: ExpenseManagerHome(onToggleTheme: toggleTheme),
+    );
+  }
+}
+
+class Transaction {
+  String date;
+  String description;
+  String category;
+  String type;
+  double amount;
+  String payment;
+
+  Transaction({
+    required this.date,
+    required this.description,
+    required this.category,
+    required this.type,
+    required this.amount,
+    required this.payment,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'date': date,
+    'description': description,
+    'category': category,
+    'type': type,
+    'amount': amount,
+    'payment': payment,
+  };
+
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+    date: json['date'],
+    description: json['description'],
+    category: json['category'],
+    type: json['type'],
+    amount: json['amount'].toDouble(),
+    payment: json['payment'],
+  );
+}
+
+class Budget {
+  String category;
+  double limit;
+  double spent;
+
+  Budget({required this.category, required this.limit, required this.spent});
+
+  Map<String, dynamic> toJson() => {
+    'category': category,
+    'limit': limit,
+    'spent': spent,
+  };
+
+  factory Budget.fromJson(Map<String, dynamic> json) => Budget(
+    category: json['category'],
+    limit: json['limit'].toDouble(),
+    spent: json['spent'].toDouble(),
+  );
+}
+
+class Goal {
+  String name;
+  double target;
+  double current;
+
+  Goal({required this.name, required this.target, required this.current});
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'target': target,
+    'current': current,
+  };
+
+  factory Goal.fromJson(Map<String, dynamic> json) => Goal(
+    name: json['name'],
+    target: json['target'].toDouble(),
+    current: json['current'].toDouble(),
+  );
+}
+
+class ExpenseManagerHome extends StatefulWidget {
+  final VoidCallback onToggleTheme;
+
+  const ExpenseManagerHome({Key? key, required this.onToggleTheme}) : super(key: key);
+
+  @override
+  State<ExpenseManagerHome> createState() => _ExpenseManagerHomeState();
+}
+
+class _ExpenseManagerHomeState extends State<ExpenseManagerHome> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  List<Transaction> transactions = [];
+  List<Budget> budgets = [];
+  List<Goal> goals = [];
+  bool hasUnsavedChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _initializeSampleData();
+  }
+
+  void _initializeSampleData() {
+    transactions = [
+      Transaction(date: '2025-10-01', description: 'Salary', category: 'Income', type: 'income', amount: 50000, payment: 'Bank Transfer'),
+      Transaction(date: '2025-10-05', description: 'Groceries', category: 'Food', type: 'expense', amount: 3000, payment: 'Credit Card'),
+      Transaction(date: '2025-10-10', description: 'Electricity Bill', category: 'Utilities', type: 'expense', amount: 1200, payment: 'UPI'),
+      Transaction(date: '2025-10-15', description: 'Freelance Work', category: 'Income', type: 'income', amount: 10000, payment: 'Bank Transfer'),
+      Transaction(date: '2025-10-20', description: 'Restaurant', category: 'Food', type: 'expense', amount: 1500, payment: 'Credit Card'),
+    ];
+
+    budgets = [
+      Budget(category: 'Food', limit: 5000, spent: 4500),
+      Budget(category: 'Utilities', limit: 2000, spent: 1200),
+      Budget(category: 'Entertainment', limit: 3000, spent: 2000),
+    ];
+
+    goals = [
+      Goal(name: 'Emergency Fund', target: 100000, current: 45000),
+      Goal(name: 'Vacation', target: 50000, current: 20000),
+    ];
+  }
+
+  void _markChanged() {
+    setState(() {
+      hasUnsavedChanges = true;
+    });
+  }
+
+  double get totalIncome => transactions.where((t) => t.type == 'income').fold(0, (sum, t) => sum + t.amount);
+  double get totalExpense => transactions.where((t) => t.type == 'expense').fold(0, (sum, t) => sum + t.amount);
+  double get balance => totalIncome - totalExpense;
+
+  Future<void> _saveData() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/expense_data.json');
+      final data = {
+        'transactions': transactions.map((t) => t.toJson()).toList(),
+        'budgets': budgets.map((b) => b.toJson()).toList(),
+        'goals': goals.map((g) => g.toJson()).toList(),
+      };
+      await file.writeAsString(json.encode(data));
+      setState(() {
+        hasUnsavedChanges = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Data saved successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error saving: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/expense_data.json');
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final data = json.decode(content);
+        setState(() {
+          transactions = (data['transactions'] as List).map((t) => Transaction.fromJson(t)).toList();
+          budgets = (data['budgets'] as List).map((b) => Budget.fromJson(b)).toList();
+          goals = (data['goals'] as List).map((g) => Goal.fromJson(g)).toList();
+          hasUnsavedChanges = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Data loaded successfully!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Error loading: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('💰 Expense Manager Pro'),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: const [
+            Tab(text: '📊 Transactions'),
+            Tab(text: '📈 Analytics'),
+            Tab(text: '💱 Converter'),
+            Tab(text: '🎯 Budget'),
+            Tab(text: '🏆 Goals'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            onPressed: widget.onToggleTheme,
+          ),
+          IconButton(
+            icon: Icon(Icons.save, color: hasUnsavedChanges ? Colors.orange : null),
+            onPressed: _saveData,
+            tooltip: hasUnsavedChanges ? 'Unsaved Changes' : 'Save',
+          ),
+          IconButton(
+            icon: const Icon(Icons.folder_open),
+            onPressed: _loadData,
+            tooltip: 'Load',
+          ),
+        ],
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          TransactionsTab(
+            transactions: transactions,
+            onChanged: _markChanged,
+            totalIncome: totalIncome,
+            totalExpense: totalExpense,
+            balance: balance,
+          ),
+          AnalyticsTab(transactions: transactions),
+          const ConverterTab(),
+          BudgetTab(budgets: budgets, onChanged: _markChanged, transactions: transactions),
+          GoalsTab(goals: goals, onChanged: _markChanged),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+}
+
+class TransactionsTab extends StatefulWidget {
+  final List<Transaction> transactions;
+  final VoidCallback onChanged;
+  final double totalIncome;
+  final double totalExpense;
+  final double balance;
+
+  const TransactionsTab({
+    Key? key,
+    required this.transactions,
+    required this.onChanged,
+    required this.totalIncome,
+    required this.totalExpense,
+    required this.balance,
+  }) : super(key: key);
+
+  @override
+  State<TransactionsTab> createState() => _TransactionsTabState();
+}
+
+class _TransactionsTabState extends State<TransactionsTab> {
+  String? selectedCategory;
+  String searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredTransactions = widget.transactions.where((t) {
+      final matchesCategory = selectedCategory == null || t.category == selectedCategory;
+      final matchesSearch = searchQuery.isEmpty || 
+          t.description.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          t.category.toLowerCase().contains(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildSummaryCard('Total Income', widget.totalIncome, Colors.green)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildSummaryCard('Total Expenses', widget.totalExpense, Colors.red)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildSummaryCard('Net Balance', widget.balance, Colors.blue)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  hintText: '🔍 Search transactions...',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: (value) => setState(() => searchQuery = value),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filteredTransactions.length,
+            itemBuilder: (context, index) {
+              final t = filteredTransactions[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: t.type == 'income' ? Colors.green : Colors.red,
+                    child: Icon(
+                      t.type == 'income' ? Icons.arrow_downward : Icons.arrow_upward,
+                      color: Colors.white,
+                    ),
+                  ),
+                  title: Text(t.description),
+                  subtitle: Text('${t.category} • ${t.date} • ${t.payment}'),
+                  trailing: Text(
+                    '₹${t.amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: t.type == 'income' ? Colors.green : Colors.red,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () => _editTransaction(context, index),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(String title, double amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, color.withOpacity(0.7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          const SizedBox(height: 8),
+          Text(
+            '₹${amount.toStringAsFixed(2)}',
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editTransaction(BuildContext context, int index) {
+    // Implementation for editing transaction
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Transaction'),
+        content: const Text('Edit functionality would be implemented here'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AnalyticsTab extends StatelessWidget {
+  final List<Transaction> transactions;
+
+  const AnalyticsTab({Key? key, required this.transactions}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildCategoryChart(),
+          const SizedBox(height: 24),
+          _buildMonthlyTrendChart(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChart() {
+    final categoryData = <String, double>{};
+    for (var t in transactions) {
+      if (t.type == 'expense') {
+        categoryData[t.category] = (categoryData[t.category] ?? 0) + t.amount;
+      }
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('🥧 Expense by Category', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  sections: categoryData.entries.map((e) {
+                    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple];
+                    final index = categoryData.keys.toList().indexOf(e.key);
+                    return PieChartSectionData(
+                      value: e.value,
+                      title: e.key,
+                      color: colors[index % colors.length],
+                      radius: 80,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyTrendChart() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('📊 Monthly Trend', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            const SizedBox(
+              height: 200,
+              child: Center(child: Text('Chart implementation with fl_chart')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ConverterTab extends StatefulWidget {
+  const ConverterTab({Key? key}) : super(key: key);
+
+  @override
+  State<ConverterTab> createState() => _ConverterTabState();
+}
+
+class _ConverterTabState extends State<ConverterTab> {
+  double currencyAmount = 100;
+  String fromCurrency = 'INR';
+  String toCurrency = 'USD';
+  double loanAmount = 500000;
+  double interestRate = 8.5;
+  int loanTerm = 5;
+
+  final Map<String, double> exchangeRates = {
+    'INR': 1,
+    'USD': 0.012,
+    'EUR': 0.011,
+    'GBP': 0.0095,
+    'JPY': 1.78,
+  };
+
+  double convertCurrency() {
+    final inINR = currencyAmount / exchangeRates[fromCurrency]!;
+    return inINR * exchangeRates[toCurrency]!;
+  }
+
+  double calculateEMI() {
+    final rate = interestRate / 100 / 12;
+    final term = loanTerm * 12;
+    if (rate == 0) return loanAmount / term;
+    return (loanAmount * rate * pow(1 + rate, term)) / (pow(1 + rate, term) - 1);
+  }
+
+  double pow(double x, int n) {
+    double result = 1;
+    for (int i = 0; i < n; i++) {
+      result *= x;
+    }
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💱 Currency Converter', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => setState(() => currencyAmount = double.tryParse(value) ?? 100),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Result: $toCurrency ${convertCurrency().toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🧮 Loan Calculator', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Loan Amount (₹)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => setState(() => loanAmount = double.tryParse(value) ?? 500000),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Interest Rate (%)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => setState(() => interestRate = double.tryParse(value) ?? 8.5),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Loan Term (Years)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => setState(() => loanTerm = int.tryParse(value) ?? 5),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Monthly EMI: ₹${calculateEMI().toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class BudgetTab extends StatelessWidget {
+  final List<Budget> budgets;
+  final VoidCallback onChanged;
+  final List<Transaction> transactions;
+
+  const BudgetTab({
+    Key? key,
+    required this.budgets,
+    required this.onChanged,
+    required this.transactions,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: budgets.length,
+      itemBuilder: (context, index) {
+        final budget = budgets[index];
+        final percent = (budget.spent / budget.limit) * 100;
+        final color = percent >= 100 ? Colors.red : percent >= 80 ? Colors.orange : Colors.green;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(budget.category, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('₹${budget.spent.toStringAsFixed(0)} / ₹${budget.limit.toStringAsFixed(0)}'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: (percent / 100).clamp(0.0, 1.0),
+                  backgroundColor: Colors.grey[300],
+                  color: color,
+                  minHeight: 8,
+                ),
+                const SizedBox(height: 8),
+                Text('${percent.toStringAsFixed(1)}% used', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class GoalsTab extends StatelessWidget {
+  final List<Goal> goals;
+  final VoidCallback onChanged;
+
+  const GoalsTab({Key? key, required this.goals, required this.onChanged}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: goals.length,
+      itemBuilder: (context, index) {
+        final goal = goals[index];
+        final percent = (goal.current / goal.target) * 100;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(goal.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('₹${goal.current.toStringAsFixed(0)}', 
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('Target: ₹${goal.target.toStringAsFixed(0)}', style: TextStyle(color: Colors.grey[600])),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: (percent / 100).clamp(0.0, 1.0),
+                  backgroundColor: Colors.grey[300],
+                  minHeight: 8,
+                ),
+                const SizedBox(height: 8),
+                Text('${percent.toStringAsFixed(1)}% achieved', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
